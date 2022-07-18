@@ -7,14 +7,48 @@
     <title>WebXR</title>
 </head>
 <body>
-    <script>
-      if ("xr" in window.navigator) {
-        /* WebXR can be used! */
-        console.info('WebXR can be used!')
-      } else {
-        /* WebXR isn't available */
-        console.info("WebXR isn't available")
-      }
-    </script>
+  <canvas id="canvas" width="300" height="300"></canvas>
+
+  <script>
+    const canvas = document.getElementById("canvas")
+    if ("xr" in window.navigator) {
+      /* WebXR can be used! */
+      console.info('WebXR can be used!')
+      const VRDevices =  Navigator.getVRDevices
+      console.info('VRDevices', VRDevices)
+
+      // 支持模式判断 inline, immersive-vr, immersive-ar 体验模式, 返回 promise
+      navigator.xr.isSessionSupported('inline')
+      navigator.xr.isSessionSupported('immersive-vr')
+      navigator.xr.isSessionSupported('immersive-ar')
+
+      // 请求开启模式 WebXR 体验期间运行帧循环
+      const XR = navigator.xr
+      XR.requestSession("inline").then((XRSession) => {
+        console.error('XRSession.requestAnimationFrame', XRSession.requestAnimationFrame)
+
+
+        const requestHandleId = XRSession.requestAnimationFrame((time, xrFrame) => {
+          let viewer = xrFrame.getViewerPose(xrReferenceSpace)
+          const gl = canvas.getContext( 'webgl' ) || canvas.getContext( 'experimental-webgl' )
+          gl.bindFramebuffer(xrWebGLLayer.framebuffer)
+
+          for (xrView of viewer.views) {
+            let xrViewport = xrWebGLLayer.getViewport(xrView)
+            gl.viewport(xrViewport.x, xrViewport.y,
+                        xrViewport.width, xrViewport.height)
+          }
+          console.error('tick')
+        })
+
+        // XRSession.cancelAnimationFrame(requestHandleId)
+        // XRSession.end()
+      })
+
+    } else {
+      /* WebXR isn't available */
+      console.info("WebXR isn't available")
+    }
+  </script>
 </body>
 </html>
