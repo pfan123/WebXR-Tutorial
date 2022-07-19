@@ -39,18 +39,20 @@
 
         let session = xrFrame.session;
 
-        // 获取用户在虚拟空间中的位置和方向
+        // XRViewerPose (XR 查看者姿势) 获取用户在虚拟空间中的位置和方向
         let pose = xrFrame.getViewerPose(xrReferenceSpace)
 
         if (pose) {
           let xrWebGLLayer = session.renderState.baseLayer;
           gl.bindFramebuffer(gl.FRAMEBUFFER, xrWebGLLayer.framebuffer)
-          // gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
           // 设置进入vr 模式后的场景颜色值变换
           gl.clearColor(Math.cos(time/ 2000),
             Math.cos(time/ 4000),
             Math.cos(time/ 6000), 1.0)
+
+          gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+
 
           // views 表示左眼和右眼
           for (let xrView of pose.views) {
@@ -65,6 +67,7 @@
         session.requestAnimationFrame(onXRFrame);
       }
 
+      // 内联会话无法在 XR 设备上显示内容，但可以允许访问设备跟踪信息并使用它在页面上呈现内容。
       navigator.xr.requestSession("inline").then(async (xrSession) => {
         xrReferenceSpace = await xrSession.requestReferenceSpace('viewer')
         xrSession.updateRenderState({ baseLayer: new XRWebGLLayer(xrSession, gl) });

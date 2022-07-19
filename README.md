@@ -172,3 +172,5 @@ WebXR Device API 受到一系列许可与安全性的控制。这些控制不涉
 [WebXR 设备 接口参考](https://developer.mozilla.org/zh-CN/docs/Web/API/WebXR_Device_API)
 
 [WebXR Device API](https://immersive-web.github.io/webxr/)
+
+[【WebAR】虚拟现实来到网页——WebXR Device API的基础知识](https://zhuanlan.zhihu.com/p/131596282?utm_source=wechat_session&utm_medium=social&utm_oi=54749781032960)
