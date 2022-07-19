@@ -7,10 +7,19 @@
     <title>WebXR</title>
 </head>
 <body>
+  <header>WebXR</header>
   <canvas id="canvas" width="300" height="300"></canvas>
 
-  <script>
+  <script type="module">
+
+    // If requested, use the polyfill to provide support for mobile devices and devices which only support WebVR.
+    import WebXRPolyfill from '../webxr-samples/js/third-party/webxr-polyfill/build/webxr-polyfill.module.js';
+    if (!("xr" in window.navigator)) {
+      new WebXRPolyfill()
+    }
+
     const canvas = document.getElementById("canvas")
+
     if ("xr" in window.navigator) {
       /* WebXR can be used! */
       console.info('WebXR can be used!')
@@ -18,32 +27,58 @@
       console.info('VRDevices', VRDevices)
 
       // 支持模式判断 inline, immersive-vr, immersive-ar 体验模式, 返回 promise
-      navigator.xr.isSessionSupported('inline')
-      navigator.xr.isSessionSupported('immersive-vr')
-      navigator.xr.isSessionSupported('immersive-ar')
+      // navigator.xr.isSessionSupported('inline')
+      // navigator.xr.isSessionSupported('immersive-vr')
+      // navigator.xr.isSessionSupported('immersive-ar')
 
-      // 请求开启模式 WebXR 体验期间运行帧循环
-      const XR = navigator.xr
-      XR.requestSession("inline").then((XRSession) => {
-        console.error('XRSession.requestAnimationFrame', XRSession.requestAnimationFrame)
+      let xrReferenceSpace = null
+      const gl = canvas.getContext('webgl', { xrCompatible: true })
 
 
-        const requestHandleId = XRSession.requestAnimationFrame((time, xrFrame) => {
-          let viewer = xrFrame.getViewerPose(xrReferenceSpace)
-          const gl = canvas.getContext( 'webgl' ) || canvas.getContext( 'experimental-webgl' )
-          gl.bindFramebuffer(xrWebGLLayer.framebuffer)
+      const onXRFrame = async (time, xrFrame) => {
 
-          for (xrView of viewer.views) {
+        let session = xrFrame.session;
+
+        // 获取用户在虚拟空间中的位置和方向
+        let pose = xrFrame.getViewerPose(xrReferenceSpace)
+
+        if (pose) {
+          let xrWebGLLayer = session.renderState.baseLayer;
+          gl.bindFramebuffer(gl.FRAMEBUFFER, xrWebGLLayer.framebuffer)
+          // gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+
+          // 设置进入vr 模式后的场景颜色值变换
+          gl.clearColor(Math.cos(time/ 2000),
+            Math.cos(time/ 4000),
+            Math.cos(time/ 6000), 1.0)
+
+          // views 表示左眼和右眼
+          for (let xrView of pose.views) {
             let xrViewport = xrWebGLLayer.getViewport(xrView)
+
+            // webglcontext 根据左右眼看到的信息，生成那一块的快照
             gl.viewport(xrViewport.x, xrViewport.y,
                         xrViewport.width, xrViewport.height)
           }
-          console.error('tick')
-        })
+        }
 
-        // XRSession.cancelAnimationFrame(requestHandleId)
-        // XRSession.end()
+        session.requestAnimationFrame(onXRFrame);
+      }
+
+      navigator.xr.requestSession("inline").then(async (xrSession) => {
+        xrReferenceSpace = await xrSession.requestReferenceSpace('viewer')
+        xrSession.updateRenderState({ baseLayer: new XRWebGLLayer(xrSession, gl) });
+
+        const requestHandleId = xrSession.requestAnimationFrame(onXRFrame)
+
+        // xrSession.cancelAnimationFrame(requestHandleId)
+        // xrSession.end()
+
+        xrSession.addEventListener('end', () => {
+          console.log('xrSession End')
+        });
       })
+
 
     } else {
       /* WebXR isn't available */
